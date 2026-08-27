@@ -51,10 +51,21 @@ npm run dev
 
 Acesse `http://localhost:3000/admin`.
 
-## Deploy sugerido
+## Deploy (Vercel + Supabase)
 
-- **App**: Vercel (projeto Next.js padrão)
-- **Banco**: Supabase (Postgres gerenciado) — usar a *connection string* em `DATABASE_URL`
+1. **Banco**: crie um projeto no [Supabase](https://supabase.com/dashboard). Em
+   *Project Settings → Database → Connection string*, copie a URI no modo **Transaction**
+   (porta 6543, funciona melhor com serverless) — essa é a `DATABASE_URL`.
+2. **App**: no [Vercel](https://vercel.com/new), importe o repositório `Viegas09/srterno`.
+3. Em *Environment Variables*, adicione:
+   - `DATABASE_URL` — a connection string do Supabase
+   - `NEXT_PUBLIC_APP_URL` — a URL final do projeto na Vercel (ex.: `https://srterno.vercel.app`)
+4. Deploy. O `postinstall` já roda `prisma generate` automaticamente durante o build.
+5. **Migrations**: antes do primeiro acesso, rode as migrations contra o banco do Supabase
+   (uma vez, da sua máquina ou por aqui mesmo):
+   ```bash
+   DATABASE_URL="<connection string do Supabase>" npx prisma migrate deploy
+   ```
 
 ## Roadmap / próximos passos
 
