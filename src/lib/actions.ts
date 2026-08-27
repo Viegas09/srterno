@@ -3,7 +3,35 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { compare } from "bcryptjs";
 import { z } from "zod";
+import { criarSessionToken, SESSION_COOKIE } from "@/lib/auth";
+import { requireSession } from "@/lib/session";
+
+export async function login(formData: FormData) {
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const senha = String(formData.get("senha") || "");
+
+  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  const senhaValida = usuario ? await compare(senha, usuario.senhaHash) : false;
+
+  if (!usuario || !senhaValida) {
+    redirect("/login?erro=1");
+  }
+
+  const token = await criarSessionToken({ userId: usuario.id, email: usuario.email, nome: usuario.nome });
+  const store = await cookies();
+  store.set(SESSION_COOKIE.name, token, SESSION_COOKIE.options);
+
+  redirect("/admin");
+}
+
+export async function logout() {
+  const store = await cookies();
+  store.delete(SESSION_COOKIE.name);
+  redirect("/login");
+}
 
 const clienteSchema = z.object({
   nome: z.string().min(2),
@@ -17,6 +45,8 @@ const clienteSchema = z.object({
 });
 
 export async function criarPedidoComCliente(formData: FormData) {
+  await requireSession();
+
   const cliente = clienteSchema.parse({
     nome: formData.get("nome"),
     cpf: String(formData.get("cpf")).replace(/\D/g, ""),
@@ -59,6 +89,8 @@ export async function criarPedidoComCliente(formData: FormData) {
 }
 
 export async function registrarPagamento(formData: FormData) {
+  await requireSession();
+
   const pedidoId = formData.get("pedidoId") as string;
   const tipo = formData.get("tipo") as string;
   const valor = Number(formData.get("valor") || 0);
@@ -78,6 +110,7 @@ export async function registrarPagamento(formData: FormData) {
 }
 
 export async function atualizarStatusPedido(pedidoId: string, status: string) {
+  await requireSession();
   await prisma.pedido.update({ where: { id: pedidoId }, data: { status: status as any } });
   revalidatePath(`/admin/pedidos/${pedidoId}`);
   revalidatePath("/admin/pedidos");

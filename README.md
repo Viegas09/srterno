@@ -8,10 +8,11 @@ Este projeto é só o **sistema**. O site institucional da loja não faz parte d
 
 ## Stack
 
-- [Next.js 14](https://nextjs.org/) (App Router) + TypeScript
+- [Next.js 16](https://nextjs.org/) (App Router) + TypeScript
 - [Prisma](https://www.prisma.io/) + PostgreSQL (compatível com [Supabase](https://supabase.com/))
 - Tailwind CSS
 - `qrcode` para gerar o QR de autopreenchimento
+- Login próprio (e-mail/senha, sessão via cookie assinado com `jose`) protegendo `/admin`
 
 ## Como funciona
 
@@ -44,12 +45,23 @@ Veja `prisma/schema.prisma` para o detalhe completo.
 
 ```bash
 npm install
-cp .env.example .env   # preencha DATABASE_URL com um Postgres (ex.: Supabase)
+cp .env.example .env   # preencha DATABASE_URL (Postgres) e AUTH_SECRET
 npx prisma migrate dev --name init
+node scripts/create-admin.mjs "Seu Nome" seu@email.com senhaForte123
 npm run dev
 ```
 
-Acesse `http://localhost:3000/admin`.
+Acesse `http://localhost:3000/login` e entre com o usuário criado acima.
+
+### Criando/gerenciando usuários do dashboard
+
+Não existe cadastro público — só quem já tem acesso ao servidor cria contas, via:
+
+```bash
+node scripts/create-admin.mjs "Nome" email@exemplo.com senha
+```
+
+Rodar de novo com o mesmo e-mail atualiza a senha (útil pra resetar senha esquecida).
 
 ## Deploy (Vercel + Supabase)
 
@@ -60,17 +72,20 @@ Acesse `http://localhost:3000/admin`.
 3. Em *Environment Variables*, adicione:
    - `DATABASE_URL` — a connection string do Supabase
    - `NEXT_PUBLIC_APP_URL` — a URL final do projeto na Vercel (ex.: `https://srterno.vercel.app`)
+   - `AUTH_SECRET` — string aleatória longa (`openssl rand -base64 32`)
 4. Deploy. O `postinstall` já roda `prisma generate` automaticamente durante o build.
 5. **Migrations**: antes do primeiro acesso, rode as migrations contra o banco do Supabase
    (uma vez, da sua máquina ou por aqui mesmo):
    ```bash
    DATABASE_URL="<connection string do Supabase>" npx prisma migrate deploy
    ```
+6. **Criar o primeiro usuário do dashboard** (também contra o banco de produção):
+   ```bash
+   DATABASE_URL="<connection string do Supabase>" node scripts/create-admin.mjs "Nome" email@srterno.com.br senhaForte123
+   ```
 
 ## Roadmap / próximos passos
 
-- [ ] Autenticação/login para o dashboard admin (hoje `/admin` está aberto — não colocar em
-      produção sem isso)
 - [ ] App do cliente (PWA) com acompanhamento do próprio pedido (fora só o autopreenchimento
       inicial)
 - [ ] Notificações automáticas (WhatsApp/e-mail) de lembrete de retirada/devolução
