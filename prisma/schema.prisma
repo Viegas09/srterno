@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ComoConheceu {
+  GOOGLE
+  REDE_SOCIAL
+  INDICACAO
+  OUTROS
+}
+
+enum TipoPedido {
+  ALUGUEL
+  VENDA
+  SOB_MEDIDA
+}
+
+enum StatusPedido {
+  RASCUNHO
+  AGUARDANDO_AUTOPREENCHIMENTO
+  CONFIRMADO
+  EM_AJUSTE
+  PRONTO_RETIRADA
+  RETIRADO
+  DEVOLVIDO
+  CANCELADO
+  ATRASADO
+}
+
+enum AjusteTipo {
+  LISA
+  RIGOR
+  SLIM
+  ITALIANA
+  BORDO
+}
+
+enum CorPeca {
+  PRETO
+  MARROM
+}
+
+enum TipoPeca {
+  PALETO
+  COLETE
+  CALCA
+  CAMISA
+  GRAVATA
+  SAPATO
+  OUTRO
+}
+
+enum TipoPagamento {
+  SINAL
+  SALDO
+  MULTA
+  ESTORNO
+  OUTRO
+}
+
+enum FormaPagamento {
+  DINHEIRO
+  PIX
+  DEBITO
+  CREDITO
+}
+
+model Cliente {
+  id             String        @id @default(cuid())
+  nome           String
+  cpf            String        @unique
+  dataNascimento DateTime?
+  telefone       String?
+  email          String?
+  endereco       String?
+  cidade         String?
+  cep            String?
+  comoConheceu   ComoConheceu?
+  observacoes    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  pedidos Pedido[]
+
+  @@index([nome])
+}
+
+/// Um pedido pode ter várias pessoas (ex.: padrinhos de um casamento),
+/// cada uma com suas próprias medidas — por isso PessoaPedido é separado do Cliente responsável.
+model Pedido {
+  id     String @id @default(cuid())
+  numero Int    @default(autoincrement())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  tipo      TipoPedido   @default(ALUGUEL)
+  status    StatusPedido @default(RASCUNHO)
+  descricao String?
+
+  dataRetirada   DateTime?
+  horaRetirada   String?
+  dataDevolucao  DateTime?
+  horaDevolucao  String?
+
+  primeiraProva DateTime?
+  segundaProva  DateTime?
+
+  valorTotal Decimal @db.Decimal(10, 2)
+  valorSinal Decimal @default(0) @db.Decimal(10, 2)
+
+  /// Token único usado no link/QR de autopreenchimento pelo cliente
+  autopreenchimentoToken         String    @unique @default(cuid())
+  autopreenchimentoPreenchidoEm  DateTime?
+
+  observacoes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pessoas    PessoaPedido[]
+  pagamentos Pagamento[]
+  itens      ItemPedido[]
+
+  @@index([status])
+  @@index([dataRetirada])
+}
+
+model PessoaPedido {
+  id       String @id @default(cuid())
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  nome String
+  cpf  String?
+
+  // Medidas (conforme ficha física)
+  paleto      String?
+  colete      String?
+  calca       String?
+  cos         String?
+  camisa      String?
+  manga       String?
+  cima        String?
+  barra       String?
+  panturrilha String?
+  cavalo      String?
+
+  ajuste       AjusteTipo?
+  corGravata   String?
+  suspensorio  Boolean     @default(false)
+  lenco        Boolean     @default(false)
+  sapatoNumero String?
+  sapatoCor    CorPeca?
+  flor         Boolean     @default(false)
+  numeroAnel   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Peça física de estoque, identificada por etiqueta/código individual
+model Peca {
+  id         String   @id @default(cuid())
+  codigo     String   @unique
+  tipo       TipoPeca
+  tamanho    String?
+  cor        String?
+  descricao  String?
+  disponivel Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  itens ItemPedido[]
+}
+
+/// Associação entre um pedido e as peças físicas reservadas para ele
+model ItemPedido {
+  id       String @id @default(cuid())
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  pecaId   String
+  peca     Peca   @relation(fields: [pecaId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([pedidoId, pecaId])
+}
+
+model Pagamento {
+  id       String @id @default(cuid())
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  tipo           TipoPagamento
+  valor          Decimal        @db.Decimal(10, 2)
+  formaPagamento FormaPagamento
+  pagoEm         DateTime       @default(now())
+  observacoes    String?
+
+  createdAt DateTime @default(now())
+}
