@@ -4,10 +4,42 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 import { criarSessionToken, SESSION_COOKIE } from "@/lib/auth";
 import { requireSession } from "@/lib/session";
+
+/// Só funciona enquanto não existir nenhum usuário no banco (bootstrap do
+/// primeiro deploy) e exige o SETUP_TOKEN — depois do primeiro usuário
+/// criado, essa action sempre recusa.
+export async function criarPrimeiroAdmin(formData: FormData) {
+  const token = String(formData.get("token") || "");
+  if (!process.env.SETUP_TOKEN || token !== process.env.SETUP_TOKEN) {
+    redirect("/setup");
+  }
+
+  const totalUsuarios = await prisma.usuario.count();
+  if (totalUsuarios > 0) {
+    redirect("/login");
+  }
+
+  const nome = String(formData.get("nome") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const senha = String(formData.get("senha") || "");
+
+  if (!nome || !email || senha.length < 8) {
+    redirect(`/setup?token=${token}&erro=1`);
+  }
+
+  const senhaHash = await hash(senha, 12);
+  const usuario = await prisma.usuario.create({ data: { nome, email, senhaHash } });
+
+  const sessionToken = await criarSessionToken({ userId: usuario.id, email: usuario.email, nome: usuario.nome });
+  const store = await cookies();
+  store.set(SESSION_COOKIE.name, sessionToken, SESSION_COOKIE.options);
+
+  redirect("/admin");
+}
 
 export async function login(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
