@@ -19,7 +19,7 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
   const totalPago = pedido.pagamentos.reduce((soma, p) => soma + Number(p.valor), 0);
   const saldoDevedor = Number(pedido.valorTotal) - totalPago;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.APP_URL || "http://localhost:3000";
   const linkAutopreenchimento = `${appUrl}/pedido/${pedido.autopreenchimentoToken}`;
   const qrCodeDataUrl = await QRCode.toDataURL(linkAutopreenchimento, { margin: 1, width: 200 });
 

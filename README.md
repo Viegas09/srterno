@@ -71,7 +71,7 @@ Rodar de novo com o mesmo e-mail atualiza a senha (útil pra resetar senha esque
 2. **App**: no [Vercel](https://vercel.com/new), importe o repositório `Viegas09/srterno`.
 3. Em *Environment Variables*, adicione:
    - `DATABASE_URL` — a connection string do Supabase
-   - `NEXT_PUBLIC_APP_URL` — a URL final do projeto na Vercel (ex.: `https://srterno.vercel.app`)
+   - `APP_URL` — a URL final do projeto na Vercel (ex.: `https://srterno.vercel.app`)
    - `AUTH_SECRET` — string aleatória longa (`openssl rand -base64 32`)
 4. Deploy. O `postinstall` já roda `prisma generate` automaticamente durante o build.
 5. **Migrations**: antes do primeiro acesso, rode as migrations contra o banco do Supabase
