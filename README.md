@@ -68,6 +68,8 @@ Rodar de novo com o mesmo e-mail atualiza a senha (útil pra resetar senha esque
 1. **Banco**: crie um projeto no [Supabase](https://supabase.com/dashboard). Na tela
    *Connect*, pegue duas URIs de conexão:
    - **Transaction pooler** (porta 6543) → vai em `DATABASE_URL`, usada nas consultas do app.
+     Adicione `?pgbouncer=true` no final dessa URL (obrigatório nesse modo, senão toda
+     consulta falha).
    - **Session pooler** ou **Direct connection** (porta 5432) → vai em `DIRECT_URL`, usada só
      pra rodar migrations (o modo Transaction não suporta os locks que o Prisma Migrate precisa).
 2. **App**: no [Vercel](https://vercel.com/new), importe o repositório `Viegas09/srterno`.
