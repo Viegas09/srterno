@@ -65,24 +65,24 @@ Rodar de novo com o mesmo e-mail atualiza a senha (útil pra resetar senha esque
 
 ## Deploy (Vercel + Supabase)
 
-1. **Banco**: crie um projeto no [Supabase](https://supabase.com/dashboard). Em
-   *Project Settings → Database → Connection string*, copie a URI no modo **Transaction**
-   (porta 6543, funciona melhor com serverless) — essa é a `DATABASE_URL`.
+1. **Banco**: crie um projeto no [Supabase](https://supabase.com/dashboard). Na tela
+   *Connect*, pegue duas URIs de conexão:
+   - **Transaction pooler** (porta 6543) → vai em `DATABASE_URL`, usada nas consultas do app.
+   - **Session pooler** ou **Direct connection** (porta 5432) → vai em `DIRECT_URL`, usada só
+     pra rodar migrations (o modo Transaction não suporta os locks que o Prisma Migrate precisa).
 2. **App**: no [Vercel](https://vercel.com/new), importe o repositório `Viegas09/srterno`.
 3. Em *Environment Variables*, adicione:
-   - `DATABASE_URL` — a connection string do Supabase
+   - `DATABASE_URL` — connection string do Supabase, modo Transaction pooler
+   - `DIRECT_URL` — connection string do Supabase, modo Session pooler ou Direct connection
    - `APP_URL` — a URL final do projeto na Vercel (ex.: `https://srterno.vercel.app`)
    - `AUTH_SECRET` — string aleatória longa (`openssl rand -base64 32`)
-4. Deploy. O `postinstall` já roda `prisma generate` automaticamente durante o build.
-5. **Migrations**: antes do primeiro acesso, rode as migrations contra o banco do Supabase
-   (uma vez, da sua máquina ou por aqui mesmo):
-   ```bash
-   DATABASE_URL="<connection string do Supabase>" npx prisma migrate deploy
-   ```
-6. **Criar o primeiro usuário do dashboard** (também contra o banco de produção):
-   ```bash
-   DATABASE_URL="<connection string do Supabase>" node scripts/create-admin.mjs "Nome" email@srterno.com.br senhaForte123
-   ```
+   - `SETUP_TOKEN` — string aleatória (`openssl rand -hex 16`), só pro primeiro acesso
+4. Deploy. O `build` já roda `prisma migrate deploy` (contra `DIRECT_URL`) automaticamente
+   antes do `next build` — não precisa rodar migration manualmente.
+5. **Criar o primeiro usuário do dashboard**, direto pelo navegador (sem terminal):
+   acesse `https://<seu-projeto>.vercel.app/setup?token=<o SETUP_TOKEN que você configurou>`
+   e preencha o formulário. Esse link só funciona uma vez — depois do primeiro usuário criado,
+   fica desativado sozinho.
 
 ## Roadmap / próximos passos
 
