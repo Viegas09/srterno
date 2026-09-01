@@ -47,6 +47,44 @@ export async function criarPrimeiroAdmin(formData: FormData) {
   redirect("/admin");
 }
 
+/// Recuperação de acesso pra quando ninguém lembra e-mail/senha do admin.
+/// Protegida pelo mesmo SETUP_TOKEN — funciona a qualquer momento (diferente
+/// do /setup, que só funciona uma vez, no primeiro deploy). Cria um admin
+/// master novo com o e-mail/senha informados, ou reseta a senha se esse
+/// e-mail já existir.
+export async function recuperarAcesso(formData: FormData) {
+  const token = String(formData.get("token") || "");
+  if (!process.env.SETUP_TOKEN || token !== process.env.SETUP_TOKEN) {
+    redirect("/recuperar-acesso");
+  }
+
+  const nome = String(formData.get("nome") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const senha = String(formData.get("senha") || "");
+
+  if (!nome || !email || senha.length < 8) {
+    redirect(`/recuperar-acesso?token=${token}&erro=1`);
+  }
+
+  const senhaHash = await hash(senha, 12);
+  const usuario = await prisma.usuario.upsert({
+    where: { email },
+    update: { senhaHash, nome, role: "ADMIN" },
+    create: { nome, email, senhaHash, role: "ADMIN" },
+  });
+
+  const sessionToken = await criarSessionToken({
+    userId: usuario.id,
+    email: usuario.email,
+    nome: usuario.nome,
+    role: usuario.role,
+  });
+  const store = await cookies();
+  store.set(SESSION_COOKIE.name, sessionToken, SESSION_COOKIE.options);
+
+  redirect("/admin");
+}
+
 export async function login(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const senha = String(formData.get("senha") || "");

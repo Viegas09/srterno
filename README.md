@@ -105,6 +105,10 @@ Rodar de novo com o mesmo e-mail atualiza a senha.
    acesse `https://<seu-projeto>.vercel.app/setup?token=<o SETUP_TOKEN que você configurou>`
    e preencha o formulário. Esse link só funciona uma vez — depois do primeiro usuário criado,
    fica desativado sozinho.
+6. **Esqueceu e-mail/senha do admin?** Acesse
+   `https://<seu-projeto>.vercel.app/recuperar-acesso?token=<o SETUP_TOKEN>` — diferente do
+   `/setup`, esse link funciona a qualquer momento (protegido só pelo token) e cria/reseta um
+   admin master com o e-mail e senha que você informar, já te logando direto.
 
 ## Roadmap / próximos passos
 
