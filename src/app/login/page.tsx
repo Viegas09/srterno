@@ -2,6 +2,7 @@ import { login } from "@/lib/actions";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { buttonClass, inputClass, labelClass } from "@/components/ui";
+import { Logo } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +19,9 @@ export default async function LoginPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-ink px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="font-serif text-3xl font-semibold text-gold-soft">Sr. Terno</p>
-          <p className="mt-1 text-xs uppercase tracking-widest text-paper/40">Sistema interno</p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Logo />
+          <p className="mt-2 text-xs uppercase tracking-widest text-paper/40">Sistema interno</p>
         </div>
 
         <form action={login} className="space-y-4 rounded-xl border border-leather bg-ink-soft p-6 shadow-card">

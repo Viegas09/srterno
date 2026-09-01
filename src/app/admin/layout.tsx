@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/session";
 import { logout } from "@/lib/actions";
 import { NavLink } from "@/components/NavLink";
+import { Logo } from "@/components/Logo";
 
 const NAV_BASE = [
   { href: "/admin", label: "Visão geral" },
@@ -23,8 +24,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between overflow-y-auto bg-ink px-4 py-6">
         <div>
           <div className="mb-10 px-2">
-            <p className="font-serif text-2xl font-semibold tracking-tight text-gold-soft">Sr. Terno</p>
-            <p className="text-xs uppercase tracking-widest text-paper/40">Sistema interno</p>
+            <Logo size="sm" />
+            <p className="mt-1 text-xs uppercase tracking-widest text-paper/40">Sistema interno</p>
           </div>
           <nav className="flex flex-col gap-1">
             {nav.map((item) => (

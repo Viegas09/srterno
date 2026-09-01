@@ -7,6 +7,7 @@ const config: Config = {
       fontFamily: {
         serif: ["var(--font-display)", "Georgia", "serif"],
         sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        script: ["var(--font-script)", "cursive"],
       },
       colors: {
         ink: "#171310",

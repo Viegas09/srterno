@@ -1,5 +1,6 @@
 import { criarCheckin } from "@/lib/actions";
 import { buttonClass, inputClass, labelClass } from "@/components/ui";
+import { Logo } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,12 @@ export default async function RecepcaoPage({
 
   if (ok === "1") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-paper px-4 text-center">
-        <div>
-          <p className="font-serif text-3xl font-semibold text-ink">Sr. Terno</p>
-          <div className="mx-auto mt-2 h-px w-10 bg-gold" />
-          <p className="mt-6 font-serif text-xl font-semibold text-ink">
+      <div className="min-h-screen bg-paper">
+        <div className="flex flex-col items-center bg-ink px-4 py-10">
+          <Logo />
+        </div>
+        <div className="px-4 py-12 text-center">
+          <p className="font-serif text-xl font-semibold text-ink">
             Prontinho{nome ? `, ${nome}` : ""}!
           </p>
           <p className="mx-auto mt-2 max-w-xs text-sm text-ink/60">
@@ -29,15 +31,14 @@ export default async function RecepcaoPage({
 
   return (
     <div className="min-h-screen bg-paper">
-      <div className="mx-auto max-w-md px-4 py-12">
-        <div className="mb-8 text-center">
-          <p className="font-serif text-3xl font-semibold text-ink">Sr. Terno</p>
-          <div className="mx-auto mt-2 h-px w-10 bg-gold" />
-          <p className="mt-4 text-sm text-ink/60">
-            Bem-vindo! Preencha seus dados antes de ser atendido(a).
-          </p>
-        </div>
+      <div className="flex flex-col items-center bg-ink px-4 py-10">
+        <Logo />
+        <p className="mt-3 text-sm text-paper/60">
+          Bem-vindo! Preencha seus dados antes de ser atendido(a).
+        </p>
+      </div>
 
+      <div className="mx-auto max-w-md px-4 py-8">
         <form action={criarCheckin} className="space-y-4 rounded-xl border border-line bg-card p-5 shadow-card">
           <div>
             <label className={labelClass}>Nome completo</label>

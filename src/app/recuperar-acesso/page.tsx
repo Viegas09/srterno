@@ -1,5 +1,6 @@
 import { recuperarAcesso } from "@/lib/actions";
 import { buttonClass, inputClass, labelClass } from "@/components/ui";
+import { Logo } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,9 @@ export default async function RecuperarAcessoPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-ink px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="font-serif text-3xl font-semibold text-gold-soft">Sr. Terno</p>
-          <p className="mt-1 text-xs uppercase tracking-widest text-paper/40">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Logo />
+          <p className="mt-2 text-xs uppercase tracking-widest text-paper/40">
             Recuperar acesso de admin master
           </p>
         </div>
