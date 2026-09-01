@@ -9,6 +9,47 @@ export function formatarData(data: Date | string | null | undefined) {
   return d.toLocaleDateString("pt-BR");
 }
 
+export const AJUSTE_LABEL: Record<string, string> = {
+  LISA: "Lisa",
+  RIGOR: "Rigor",
+  SLIM: "Slim",
+  ITALIANA: "Italiana",
+  BORDO: "Bordô",
+};
+
+export const COR_PECA_LABEL: Record<string, string> = {
+  PRETO: "Preto",
+  MARROM: "Marrom",
+};
+
+export const PAGAMENTO_TIPO_LABEL: Record<string, string> = {
+  SINAL: "Sinal",
+  SALDO: "Saldo",
+  MULTA: "Multa",
+  ESTORNO: "Estorno",
+  OUTRO: "Outro",
+};
+
+export const FORMA_PAGAMENTO_LABEL: Record<string, string> = {
+  DINHEIRO: "Dinheiro",
+  PIX: "PIX",
+  DEBITO: "Débito",
+  CREDITO: "Crédito",
+};
+
+export const COMO_CONHECEU_LABEL: Record<string, string> = {
+  GOOGLE: "Google",
+  REDE_SOCIAL: "Rede social",
+  INDICACAO: "Indicação",
+  OUTROS: "Outros",
+};
+
+export const TIPO_LABEL: Record<string, string> = {
+  ALUGUEL: "Aluguel",
+  VENDA: "Venda",
+  SOB_MEDIDA: "Sob medida",
+};
+
 export const STATUS_LABEL: Record<string, string> = {
   RASCUNHO: "Rascunho",
   AGUARDANDO_AUTOPREENCHIMENTO: "Aguardando cliente",
@@ -21,14 +62,16 @@ export const STATUS_LABEL: Record<string, string> = {
   ATRASADO: "Atrasado",
 };
 
+/// Paleta alinhada à identidade visual (dourado/couro/bordô), evitando as
+/// cores genéricas padrão do Tailwind.
 export const STATUS_COLOR: Record<string, string> = {
-  RASCUNHO: "bg-neutral-200 text-neutral-700",
-  AGUARDANDO_AUTOPREENCHIMENTO: "bg-amber-100 text-amber-800",
-  CONFIRMADO: "bg-blue-100 text-blue-800",
-  EM_AJUSTE: "bg-purple-100 text-purple-800",
-  PRONTO_RETIRADA: "bg-emerald-100 text-emerald-800",
-  RETIRADO: "bg-teal-100 text-teal-800",
-  DEVOLVIDO: "bg-neutral-800 text-white",
-  CANCELADO: "bg-red-100 text-red-800",
-  ATRASADO: "bg-red-600 text-white",
+  RASCUNHO: "bg-line/70 text-ink/60",
+  AGUARDANDO_AUTOPREENCHIMENTO: "bg-gold-soft text-gold-deep",
+  CONFIRMADO: "bg-[#dde6d6] text-[#3f5c34]",
+  EM_AJUSTE: "bg-[#dde3e8] text-[#3d5566]",
+  PRONTO_RETIRADA: "bg-[#3f5c34] text-white",
+  RETIRADO: "bg-ink text-gold-soft",
+  DEVOLVIDO: "bg-leather text-gold-soft",
+  CANCELADO: "bg-bordeaux-soft text-bordeaux",
+  ATRASADO: "bg-bordeaux text-white",
 };

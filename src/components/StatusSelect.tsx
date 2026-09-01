@@ -12,7 +12,7 @@ export function StatusSelect({ pedidoId, status }: { pedidoId: string; status: s
       defaultValue={status}
       disabled={isPending}
       onChange={(e) => startTransition(() => atualizarStatusPedido(pedidoId, e.target.value))}
-      className={`rounded-full border-0 px-3 py-1.5 text-xs font-medium ${STATUS_COLOR[status]}`}
+      className={`cursor-pointer rounded-full border-0 px-3 py-1.5 text-xs font-medium shadow-card transition disabled:opacity-50 ${STATUS_COLOR[status]}`}
     >
       {Object.entries(STATUS_LABEL).map(([value, label]) => (
         <option key={value} value={value}>

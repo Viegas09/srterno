@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { formatarData, formatarMoeda, STATUS_LABEL, STATUS_COLOR } from "@/lib/format";
+import { formatarData, formatarMoeda, STATUS_LABEL, STATUS_COLOR, TIPO_LABEL } from "@/lib/format";
+import { ButtonLink, Card, EmptyState, PageHeader } from "@/components/ui";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -12,63 +13,53 @@ export default async function PedidosPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-serif text-2xl font-semibold">Pedidos</h1>
-        <Link
-          href="/admin/pedidos/novo"
-          className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-        >
-          Novo pedido
-        </Link>
-      </div>
+      <PageHeader
+        title="Pedidos"
+        subtitle={`${pedidos.length} no total`}
+        action={<ButtonLink href="/admin/pedidos/novo">Novo pedido</ButtonLink>}
+      />
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      <Card className="overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-50 text-left text-xs uppercase text-neutral-500">
+          <thead className="bg-paper text-left text-xs font-medium uppercase tracking-wide text-ink/45">
             <tr>
-              <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Cliente</th>
-              <th className="px-4 py-3">Tipo</th>
-              <th className="px-4 py-3">Retirada</th>
-              <th className="px-4 py-3">Devolução</th>
-              <th className="px-4 py-3">Valor</th>
-              <th className="px-4 py-3">Status</th>
+              <th className="px-5 py-3">#</th>
+              <th className="px-5 py-3">Cliente</th>
+              <th className="px-5 py-3">Tipo</th>
+              <th className="px-5 py-3">Retirada</th>
+              <th className="px-5 py-3">Devolução</th>
+              <th className="px-5 py-3">Valor</th>
+              <th className="px-5 py-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100">
+          <tbody className="divide-y divide-line">
             {pedidos.map((p) => (
-              <tr key={p.id} className="cursor-pointer hover:bg-neutral-50">
-                <td className="px-4 py-3">
+              <tr key={p.id} className="transition hover:bg-paper">
+                <td className="px-5 py-3.5 text-ink/50">
                   <Link href={`/admin/pedidos/${p.id}`} className="block">
                     {p.numero}
                   </Link>
                 </td>
-                <td className="px-4 py-3">
-                  <Link href={`/admin/pedidos/${p.id}`} className="block font-medium">
+                <td className="px-5 py-3.5">
+                  <Link href={`/admin/pedidos/${p.id}`} className="block font-medium text-ink">
                     {p.cliente.nome}
                   </Link>
                 </td>
-                <td className="px-4 py-3">{p.tipo}</td>
-                <td className="px-4 py-3">{formatarData(p.dataRetirada)}</td>
-                <td className="px-4 py-3">{formatarData(p.dataDevolucao)}</td>
-                <td className="px-4 py-3">{formatarMoeda(Number(p.valorTotal))}</td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-1 text-xs ${STATUS_COLOR[p.status]}`}>
+                <td className="px-5 py-3.5 text-ink/70">{TIPO_LABEL[p.tipo]}</td>
+                <td className="px-5 py-3.5 text-ink/70">{formatarData(p.dataRetirada)}</td>
+                <td className="px-5 py-3.5 text-ink/70">{formatarData(p.dataDevolucao)}</td>
+                <td className="px-5 py-3.5 text-ink/70">{formatarMoeda(Number(p.valorTotal))}</td>
+                <td className="px-5 py-3.5">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[p.status]}`}>
                     {STATUS_LABEL[p.status]}
                   </span>
                 </td>
               </tr>
             ))}
-            {pedidos.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-neutral-500">
-                  Nenhum pedido cadastrado ainda.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
-      </div>
+        {pedidos.length === 0 && <EmptyState>Nenhum pedido cadastrado ainda.</EmptyState>}
+      </Card>
     </div>
   );
 }

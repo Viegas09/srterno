@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { formatarData, formatarMoeda } from "@/lib/format";
+import { formatarData, formatarMoeda, PAGAMENTO_TIPO_LABEL, FORMA_PAGAMENTO_LABEL } from "@/lib/format";
+import { Card, EmptyState, PageHeader, StatCard } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -39,75 +40,68 @@ export default async function FinanceiroPage() {
 
   return (
     <div>
-      <h1 className="mb-6 font-serif text-2xl font-semibold">Financeiro</h1>
+      <PageHeader title="Financeiro" />
 
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <p className="text-xs text-neutral-500">Recebido este mês</p>
-          <p className="mt-1 text-xl font-semibold">{formatarMoeda(totalRecebidoMes)}</p>
-        </div>
-        <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <p className="text-xs text-neutral-500">A receber (pedidos ativos)</p>
-          <p className="mt-1 text-xl font-semibold">{formatarMoeda(totalAReceber)}</p>
-        </div>
-        <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <p className="mb-1 text-xs text-neutral-500">Recebido por forma de pagamento</p>
-          <div className="space-y-0.5 text-sm">
+        <StatCard label="Recebido este mês" value={formatarMoeda(totalRecebidoMes)} />
+        <StatCard label="A receber (pedidos ativos)" value={formatarMoeda(totalAReceber)} />
+        <Card className="px-5 py-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink/45">
+            Recebido por forma de pagamento
+          </p>
+          <div className="mt-2 space-y-1 text-sm">
             {Object.entries(porFormaPagamento).map(([forma, valor]) => (
-              <p key={forma} className="flex justify-between">
-                <span>{forma}</span>
-                <span>{formatarMoeda(valor)}</span>
+              <p key={forma} className="flex justify-between text-ink/80">
+                <span>{FORMA_PAGAMENTO_LABEL[forma] ?? forma}</span>
+                <span className="font-medium">{formatarMoeda(valor)}</span>
               </p>
             ))}
-            {Object.keys(porFormaPagamento).length === 0 && <p className="text-neutral-500">—</p>}
+            {Object.keys(porFormaPagamento).length === 0 && <p className="text-ink/40">—</p>}
           </div>
-        </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <section className="rounded-lg border border-neutral-200 bg-white">
-          <div className="border-b border-neutral-200 px-4 py-3">
-            <h2 className="font-medium">Pagamentos do mês</h2>
+        <Card>
+          <div className="border-b border-line px-5 py-4">
+            <h2 className="font-serif text-lg font-semibold text-ink">Pagamentos do mês</h2>
           </div>
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-line">
             {pagamentosMes.map((pg) => (
-              <div key={pg.id} className="flex items-center justify-between px-4 py-3 text-sm">
+              <div key={pg.id} className="flex items-center justify-between px-5 py-3.5 text-sm">
                 <div>
-                  <p className="font-medium">{pg.pedido.cliente.nome}</p>
-                  <p className="text-neutral-500">
-                    {pg.tipo} · {pg.formaPagamento} · {formatarData(pg.pagoEm)}
+                  <p className="font-medium text-ink">{pg.pedido.cliente.nome}</p>
+                  <p className="text-ink/50">
+                    {PAGAMENTO_TIPO_LABEL[pg.tipo]} · {FORMA_PAGAMENTO_LABEL[pg.formaPagamento]} ·{" "}
+                    {formatarData(pg.pagoEm)}
                   </p>
                 </div>
-                <span>{formatarMoeda(Number(pg.valor))}</span>
+                <span className="font-medium text-ink">{formatarMoeda(Number(pg.valor))}</span>
               </div>
             ))}
-            {pagamentosMes.length === 0 && (
-              <p className="px-4 py-6 text-sm text-neutral-500">Nenhum pagamento este mês.</p>
-            )}
           </div>
-        </section>
+          {pagamentosMes.length === 0 && <EmptyState>Nenhum pagamento este mês.</EmptyState>}
+        </Card>
 
-        <section className="rounded-lg border border-neutral-200 bg-white">
-          <div className="border-b border-neutral-200 px-4 py-3">
-            <h2 className="font-medium">Pedidos com saldo devedor</h2>
+        <Card>
+          <div className="border-b border-line px-5 py-4">
+            <h2 className="font-serif text-lg font-semibold text-ink">Pedidos com saldo devedor</h2>
           </div>
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-line">
             {pedidosComSaldoDevedor.map(({ pedido, totalPago }) => (
-              <div key={pedido.id} className="flex items-center justify-between px-4 py-3 text-sm">
+              <div key={pedido.id} className="flex items-center justify-between px-5 py-3.5 text-sm">
                 <div>
-                  <p className="font-medium">{pedido.cliente.nome}</p>
-                  <p className="text-neutral-500">Pedido #{pedido.numero}</p>
+                  <p className="font-medium text-ink">{pedido.cliente.nome}</p>
+                  <p className="text-ink/50">Pedido #{pedido.numero}</p>
                 </div>
-                <span className="font-medium text-red-600">
+                <span className="font-medium text-bordeaux">
                   {formatarMoeda(Number(pedido.valorTotal) - totalPago)}
                 </span>
               </div>
             ))}
-            {pedidosComSaldoDevedor.length === 0 && (
-              <p className="px-4 py-6 text-sm text-neutral-500">Nenhum saldo pendente.</p>
-            )}
           </div>
-        </section>
+          {pedidosComSaldoDevedor.length === 0 && <EmptyState>Nenhum saldo pendente.</EmptyState>}
+        </Card>
       </div>
     </div>
   );
