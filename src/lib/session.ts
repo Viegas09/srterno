@@ -16,3 +16,10 @@ export async function requireSession() {
   if (!session) redirect("/login");
   return session;
 }
+
+/// Páginas/ações restritas ao admin master (financeiro, gestão de usuários).
+export async function requireAdmin() {
+  const session = await requireSession();
+  if (session.role !== "ADMIN") redirect("/admin");
+  return session;
+}

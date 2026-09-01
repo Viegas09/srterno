@@ -71,12 +71,22 @@ enum FormaPagamento {
   CREDITO
 }
 
+enum Role {
+  ADMIN
+  ATENDENTE
+}
+
 model Usuario {
-  id         String   @id @default(cuid())
-  nome       String
-  email      String   @unique
-  senhaHash  String
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  role      Role     @default(ATENDENTE)
+  createdAt DateTime @default(now())
+
+  pedidosCriados        Pedido[]       @relation("PedidoCriadoPor")
+  pagamentosRegistrados Pagamento[]    @relation("PagamentoRegistradoPor")
+  pessoasLancadas       PessoaPedido[] @relation("PessoaLancadaPor")
 }
 
 model Cliente {
@@ -131,6 +141,11 @@ model Pedido {
 
   observacoes String?
 
+  /// Quem abriu o pedido — nulo quando veio do check-in público (o próprio
+  /// cliente, sem login).
+  criadoPorId String?
+  criadoPor   Usuario? @relation("PedidoCriadoPor", fields: [criadoPorId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -170,6 +185,10 @@ model PessoaPedido {
   sapatoCor    CorPeca?
   flor         Boolean     @default(false)
   numeroAnel   String?
+
+  /// Quem mediu e digitou — sempre uma atendente, nunca o cliente.
+  lancadoPorId String?
+  lancadoPor   Usuario? @relation("PessoaLancadaPor", fields: [lancadoPorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -212,6 +231,9 @@ model Pagamento {
   formaPagamento FormaPagamento
   pagoEm         DateTime       @default(now())
   observacoes    String?
+
+  registradoPorId String?
+  registradoPor   Usuario? @relation("PagamentoRegistradoPor", fields: [registradoPorId], references: [id])
 
   createdAt DateTime @default(now())
 }

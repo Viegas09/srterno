@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 import { criarSessionToken, SESSION_COOKIE } from "@/lib/auth";
-import { requireSession } from "@/lib/session";
+import { requireAdmin, requireSession } from "@/lib/session";
 
 /// Só funciona enquanto não existir nenhum usuário no banco (bootstrap do
 /// primeiro deploy) e exige o SETUP_TOKEN — depois do primeiro usuário
@@ -32,9 +32,15 @@ export async function criarPrimeiroAdmin(formData: FormData) {
   }
 
   const senhaHash = await hash(senha, 12);
-  const usuario = await prisma.usuario.create({ data: { nome, email, senhaHash } });
+  // Primeiro usuário do sistema sempre nasce admin master.
+  const usuario = await prisma.usuario.create({ data: { nome, email, senhaHash, role: "ADMIN" } });
 
-  const sessionToken = await criarSessionToken({ userId: usuario.id, email: usuario.email, nome: usuario.nome });
+  const sessionToken = await criarSessionToken({
+    userId: usuario.id,
+    email: usuario.email,
+    nome: usuario.nome,
+    role: usuario.role,
+  });
   const store = await cookies();
   store.set(SESSION_COOKIE.name, sessionToken, SESSION_COOKIE.options);
 
@@ -52,7 +58,12 @@ export async function login(formData: FormData) {
     redirect("/login?erro=1");
   }
 
-  const token = await criarSessionToken({ userId: usuario.id, email: usuario.email, nome: usuario.nome });
+  const token = await criarSessionToken({
+    userId: usuario.id,
+    email: usuario.email,
+    nome: usuario.nome,
+    role: usuario.role,
+  });
   const store = await cookies();
   store.set(SESSION_COOKIE.name, token, SESSION_COOKIE.options);
 
@@ -112,7 +123,7 @@ export async function criarCheckin(formData: FormData) {
 }
 
 export async function criarPedidoComCliente(formData: FormData) {
-  await requireSession();
+  const session = await requireSession();
 
   const cliente = clienteSchema.parse({
     nome: formData.get("nome"),
@@ -148,6 +159,7 @@ export async function criarPedidoComCliente(formData: FormData) {
       dataRetirada: dataRetiradaStr ? new Date(dataRetiradaStr) : undefined,
       dataDevolucao: dataDevolucaoStr ? new Date(dataDevolucaoStr) : undefined,
       status: "AGUARDANDO_AUTOPREENCHIMENTO",
+      criadoPorId: session.userId,
     },
   });
 
@@ -156,7 +168,7 @@ export async function criarPedidoComCliente(formData: FormData) {
 }
 
 export async function registrarPagamento(formData: FormData) {
-  await requireSession();
+  const session = await requireSession();
 
   const pedidoId = formData.get("pedidoId") as string;
   const tipo = formData.get("tipo") as string;
@@ -169,6 +181,7 @@ export async function registrarPagamento(formData: FormData) {
       tipo: tipo as any,
       valor,
       formaPagamento: formaPagamento as any,
+      registradoPorId: session.userId,
     },
   });
 
@@ -233,7 +246,7 @@ const pessoaSchema = z.object({
 /// Só a atendente lança medidas — o cliente nunca escreve nem edita essa
 /// parte (ela digita olhando a pessoa na sua frente).
 export async function adicionarPessoaAoPedido(pedidoId: string, formData: FormData) {
-  await requireSession();
+  const session = await requireSession();
 
   const dados = pessoaSchema.parse({
     nome: formData.get("nome"),
@@ -258,11 +271,37 @@ export async function adicionarPessoaAoPedido(pedidoId: string, formData: FormDa
     numeroAnel: formData.get("numeroAnel") || undefined,
   });
 
-  await prisma.pessoaPedido.create({ data: { pedidoId, ...dados } });
+  await prisma.pessoaPedido.create({ data: { pedidoId, ...dados, lancadoPorId: session.userId } });
   await prisma.pedido.update({
     where: { id: pedidoId },
     data: { autopreenchimentoPreenchidoEm: new Date() },
   });
 
   revalidatePath(`/admin/pedidos/${pedidoId}`);
+}
+
+const usuarioSchema = z.object({
+  nome: z.string().min(2),
+  email: z.string().email(),
+  senha: z.string().min(8),
+  role: z.enum(["ADMIN", "ATENDENTE"]),
+});
+
+/// Só o admin master cadastra novos acessos — não existe autocadastro.
+export async function criarUsuario(formData: FormData) {
+  await requireAdmin();
+
+  const dados = usuarioSchema.parse({
+    nome: formData.get("nome"),
+    email: String(formData.get("email") || "").trim().toLowerCase(),
+    senha: formData.get("senha"),
+    role: formData.get("role"),
+  });
+
+  const senhaHash = await hash(dados.senha, 12);
+  await prisma.usuario.create({
+    data: { nome: dados.nome, email: dados.email, senhaHash, role: dados.role },
+  });
+
+  revalidatePath("/admin/usuarios");
 }

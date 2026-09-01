@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { formatarData, formatarMoeda, PAGAMENTO_TIPO_LABEL, FORMA_PAGAMENTO_LABEL } from "@/lib/format";
 import { Card, EmptyState, PageHeader, StatCard } from "@/components/ui";
+import { requireAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function FinanceiroPage() {
+  await requireAdmin();
+
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
   const [pagamentosMes, pedidosAtivos] = await Promise.all([

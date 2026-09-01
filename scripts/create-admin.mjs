@@ -22,9 +22,9 @@ const senhaHash = await hash(senha, 12);
 const usuario = await prisma.usuario.upsert({
   where: { email: email.toLowerCase() },
   update: { senhaHash, nome },
-  create: { nome, email: email.toLowerCase(), senhaHash },
+  create: { nome, email: email.toLowerCase(), senhaHash, role: "ADMIN" },
 });
 
-console.log(`Usuário pronto: ${usuario.email}`);
+console.log(`Usuário pronto (${usuario.role}): ${usuario.email}`);
 
 await prisma.$disconnect();

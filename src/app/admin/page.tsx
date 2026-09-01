@@ -1,11 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { formatarMoeda, STATUS_LABEL, STATUS_COLOR, formatarData } from "@/lib/format";
 import { Card, PageHeader, StatCard, EmptyState } from "@/components/ui";
+import { getSession } from "@/lib/session";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
+  const session = await getSession();
+  const isAdmin = session?.role === "ADMIN";
+
   const [pedidosAtivos, naFila, pagamentosMes, proximasRetiradas] = await Promise.all([
     prisma.pedido.count({
       where: { status: { notIn: ["DEVOLVIDO", "CANCELADO"] } },
@@ -32,17 +37,21 @@ export default async function AdminOverviewPage() {
     }),
   ]);
 
-  const totalAReceber = await prisma.pedido.aggregate({
-    _sum: { valorTotal: true },
-    where: { status: { notIn: ["DEVOLVIDO", "CANCELADO"] } },
-  });
-
-  const cards = [
+  const cards: { label: string; value: ReactNode; href?: string }[] = [
     { label: "Pedidos ativos", value: pedidosAtivos },
     { label: "Na fila de atendimento", value: naFila, href: "/admin/recepcao" },
-    { label: "Recebido este mês", value: formatarMoeda(Number(pagamentosMes._sum.valor ?? 0)) },
-    { label: "Total em pedidos ativos", value: formatarMoeda(Number(totalAReceber._sum.valorTotal ?? 0)) },
   ];
+
+  if (isAdmin) {
+    const totalAReceber = await prisma.pedido.aggregate({
+      _sum: { valorTotal: true },
+      where: { status: { notIn: ["DEVOLVIDO", "CANCELADO"] } },
+    });
+    cards.push(
+      { label: "Recebido este mês", value: formatarMoeda(Number(pagamentosMes._sum.valor ?? 0)) },
+      { label: "Total em pedidos ativos", value: formatarMoeda(Number(totalAReceber._sum.valorTotal ?? 0)) }
+    );
+  }
 
   return (
     <div>

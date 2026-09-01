@@ -30,6 +30,20 @@ Este projeto é só o **sistema**. O site institucional da loja não faz parte d
 5. A tela de **Financeiro** mostra o recebido no mês, saldo a receber por pedido e breakdown por
    forma de pagamento.
 
+## Governança (papéis de acesso)
+
+- **Admin master** — acesso a tudo, incluindo Financeiro e a tela de Usuários (onde cadastra o
+  acesso das atendentes).
+- **Atendente** — lança pedidos, medidas e pagamentos normalmente, mas não vê a aba Financeiro
+  nem a de Usuários (nem por link direto — a página bloqueia e redireciona).
+
+Todo pedido, medida e pagamento fica com o registro de quem lançou (`criadoPor`, `lancadoPor`,
+`registradoPor`), visível na página do pedido — dá pra ver quem abriu, quem mediu e quem recebeu
+cada pagamento.
+
+Não existe autocadastro: o primeiro usuário (criado via `/setup`, ver deploy abaixo) sempre nasce
+admin master; a partir daí, só um admin cria novos acessos, pela tela **Usuários** no dashboard.
+
 ## Modelo de dados
 
 Modelado a partir da ficha física de locação usada hoje pela loja:
@@ -58,13 +72,16 @@ Acesse `http://localhost:3000/login` e entre com o usuário criado acima.
 
 ### Criando/gerenciando usuários do dashboard
 
-Não existe cadastro público — só quem já tem acesso ao servidor cria contas, via:
+O jeito normal é pela tela **Usuários** dentro do dashboard (só admin master vê essa tela).
+
+Só use o script abaixo em emergência (ex.: perdeu a senha do único admin) — ele sempre cria/atualiza
+como **admin master**:
 
 ```bash
 node scripts/create-admin.mjs "Nome" email@exemplo.com senha
 ```
 
-Rodar de novo com o mesmo e-mail atualiza a senha (útil pra resetar senha esquecida).
+Rodar de novo com o mesmo e-mail atualiza a senha.
 
 ## Deploy (Vercel + Supabase)
 

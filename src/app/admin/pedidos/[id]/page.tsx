@@ -17,7 +17,12 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
   const { id } = await params;
   const pedido = await prisma.pedido.findUnique({
     where: { id },
-    include: { cliente: true, pessoas: true, pagamentos: { orderBy: { pagoEm: "desc" } } },
+    include: {
+      cliente: true,
+      criadoPor: true,
+      pessoas: { include: { lancadoPor: true } },
+      pagamentos: { orderBy: { pagoEm: "desc" }, include: { registradoPor: true } },
+    },
   });
 
   if (!pedido) notFound();
@@ -40,6 +45,9 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
           </h1>
           <p className="mt-1 text-sm text-ink/55">
             {pedido.cliente.telefone ?? pedido.cliente.cpf}
+          </p>
+          <p className="mt-1 text-xs text-ink/40">
+            Aberto por {pedido.criadoPor?.nome ?? "check-in do cliente"} em {formatarData(pedido.createdAt)}
           </p>
         </div>
         <StatusSelect pedidoId={pedido.id} status={pedido.status} />
@@ -113,7 +121,12 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
             <div className="mt-3 space-y-3">
               {pedido.pessoas.map((pessoa) => (
                 <div key={pessoa.id} className="rounded-lg border border-line bg-paper/60 p-4 text-sm">
-                  <p className="mb-2 font-serif text-base font-semibold text-ink">{pessoa.nome}</p>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <p className="font-serif text-base font-semibold text-ink">{pessoa.nome}</p>
+                    {pessoa.lancadoPor && (
+                      <p className="text-xs text-ink/40">medido por {pessoa.lancadoPor.nome}</p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-4 gap-x-4 gap-y-1.5 text-ink/65">
                     <span>Paletó: {pessoa.paleto ?? "—"}</span>
                     <span>Colete: {pessoa.colete ?? "—"}</span>
@@ -222,6 +235,9 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
                 <div key={pg.id} className="flex items-center justify-between py-2.5 text-sm">
                   <span className="text-ink/70">
                     {pg.tipo} · {pg.formaPagamento} · {formatarData(pg.pagoEm)}
+                    {pg.registradoPor && (
+                      <span className="text-ink/40"> · por {pg.registradoPor.nome}</span>
+                    )}
                   </span>
                   <span className="font-medium text-ink">{formatarMoeda(Number(pg.valor))}</span>
                 </div>
