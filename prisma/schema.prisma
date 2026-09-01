@@ -120,7 +120,9 @@ model Pedido {
   primeiraProva DateTime?
   segundaProva  DateTime?
 
-  valorTotal Decimal @db.Decimal(10, 2)
+  /// Fica em 0 até a atendente completar o pedido (no check-in ainda não se
+  /// sabe tipo/valor — só depois de medir e conversar com o cliente).
+  valorTotal Decimal @default(0) @db.Decimal(10, 2)
   valorSinal Decimal @default(0) @db.Decimal(10, 2)
 
   /// Token único usado no link/QR de autopreenchimento pelo cliente

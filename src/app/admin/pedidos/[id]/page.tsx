@@ -6,11 +6,10 @@ import {
   COR_PECA_LABEL,
   TIPO_LABEL,
 } from "@/lib/format";
-import { registrarPagamento } from "@/lib/actions";
+import { registrarPagamento, atualizarDadosPedido, adicionarPessoaAoPedido } from "@/lib/actions";
 import { StatusSelect } from "@/components/StatusSelect";
 import { Card, SectionTitle, buttonClass, inputClass, labelClass } from "@/components/ui";
 import { notFound } from "next/navigation";
-import QRCode from "qrcode";
 
 export const dynamic = "force-dynamic";
 
@@ -26,13 +25,8 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
   const totalPago = pedido.pagamentos.reduce((soma, p) => soma + Number(p.valor), 0);
   const saldoDevedor = Number(pedido.valorTotal) - totalPago;
 
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
-  const linkAutopreenchimento = `${appUrl}/pedido/${pedido.autopreenchimentoToken}`;
-  const qrCodeDataUrl = await QRCode.toDataURL(linkAutopreenchimento, {
-    margin: 1,
-    width: 220,
-    color: { dark: "#171310", light: "#fffdf8" },
-  });
+  const atualizarDados = atualizarDadosPedido.bind(null, pedido.id);
+  const adicionarPessoa = adicionarPessoaAoPedido.bind(null, pedido.id);
 
   return (
     <div className="max-w-4xl">
@@ -44,7 +38,9 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
           <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-ink">
             {pedido.cliente.nome}
           </h1>
-          <p className="mt-1 text-sm text-ink/55">{pedido.descricao ?? TIPO_LABEL[pedido.tipo]}</p>
+          <p className="mt-1 text-sm text-ink/55">
+            {pedido.cliente.telefone ?? pedido.cliente.cpf}
+          </p>
         </div>
         <StatusSelect pedidoId={pedido.id} status={pedido.status} />
       </div>
@@ -52,29 +48,66 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
           <Card className="p-5">
-            <SectionTitle>Datas</SectionTitle>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-ink/80">
-              <p>
-                <span className="text-ink/45">Retirada:</span> {formatarData(pedido.dataRetirada)}
-              </p>
-              <p>
-                <span className="text-ink/45">Devolução:</span> {formatarData(pedido.dataDevolucao)}
-              </p>
-              <p>
-                <span className="text-ink/45">1ª prova:</span> {formatarData(pedido.primeiraProva)}
-              </p>
-              <p>
-                <span className="text-ink/45">2ª prova:</span> {formatarData(pedido.segundaProva)}
-              </p>
-            </div>
+            <SectionTitle>Dados do pedido</SectionTitle>
+            <form action={atualizarDados} className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Tipo</label>
+                <select name="tipo" defaultValue={pedido.tipo} className={inputClass}>
+                  <option value="ALUGUEL">Aluguel</option>
+                  <option value="VENDA">Venda</option>
+                  <option value="SOB_MEDIDA">Sob medida</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Descrição</label>
+                <input
+                  name="descricao"
+                  defaultValue={pedido.descricao ?? ""}
+                  placeholder="Ex: Terno para casamento"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Data de retirada</label>
+                <input
+                  name="dataRetirada"
+                  type="date"
+                  defaultValue={pedido.dataRetirada?.toISOString().slice(0, 10)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Data de devolução</label>
+                <input
+                  name="dataDevolucao"
+                  type="date"
+                  defaultValue={pedido.dataDevolucao?.toISOString().slice(0, 10)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Valor total (R$)</label>
+                <input
+                  name="valorTotal"
+                  type="number"
+                  step="0.01"
+                  defaultValue={Number(pedido.valorTotal)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="flex items-end">
+                <button type="submit" className={buttonClass}>
+                  Salvar dados do pedido
+                </button>
+              </div>
+            </form>
           </Card>
 
           <Card className="p-5">
             <SectionTitle>Pessoas e medidas ({pedido.pessoas.length})</SectionTitle>
             {pedido.pessoas.length === 0 && (
               <p className="mt-3 text-sm text-ink/50">
-                Nenhuma medida preenchida ainda. Peça pro cliente escanear o QR ao lado, ou lance
-                manualmente.
+                Nenhuma medida lançada ainda. Use o formulário abaixo enquanto atende a pessoa.
               </p>
             )}
             <div className="mt-3 space-y-3">
@@ -105,6 +138,81 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
                 </div>
               ))}
             </div>
+
+            <details className="mt-4 group">
+              <summary className="cursor-pointer text-sm font-medium text-gold-deep">
+                + Lançar medidas de uma pessoa
+              </summary>
+              <form action={adicionarPessoa} className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Nome completo</label>
+                    <input name="nome" required className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>CPF</label>
+                    <input name="cpf" className={inputClass} />
+                  </div>
+                </div>
+
+                <fieldset className="rounded-lg border border-line p-4">
+                  <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-gold-deep">
+                    Medidas
+                  </legend>
+                  <div className="mt-2 grid grid-cols-4 gap-3">
+                    <Campo label="Paletó" name="paleto" />
+                    <Campo label="Colete" name="colete" />
+                    <Campo label="Calça" name="calca" />
+                    <Campo label="Cós" name="cos" />
+                    <Campo label="Camisa" name="camisa" />
+                    <Campo label="Manga" name="manga" />
+                    <Campo label="Cima" name="cima" />
+                    <Campo label="Barra" name="barra" />
+                    <Campo label="Panturrilha" name="panturrilha" />
+                    <Campo label="Cavalo" name="cavalo" />
+                  </div>
+                </fieldset>
+
+                <fieldset className="rounded-lg border border-line p-4">
+                  <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-gold-deep">
+                    Ajustes e acessórios
+                  </legend>
+                  <div className="mt-2 grid grid-cols-4 gap-3">
+                    <div>
+                      <label className={labelClass}>Ajuste</label>
+                      <select name="ajuste" className={inputClass}>
+                        <option value="">—</option>
+                        <option value="LISA">Lisa</option>
+                        <option value="RIGOR">Rigor</option>
+                        <option value="SLIM">Slim</option>
+                        <option value="ITALIANA">Italiana</option>
+                        <option value="BORDO">Bordô</option>
+                      </select>
+                    </div>
+                    <Campo label="Cor da gravata" name="corGravata" />
+                    <Campo label="Nº sapato" name="sapatoNumero" />
+                    <div>
+                      <label className={labelClass}>Cor do sapato</label>
+                      <select name="sapatoCor" className={inputClass}>
+                        <option value="">—</option>
+                        <option value="PRETO">Preto</option>
+                        <option value="MARROM">Marrom</option>
+                      </select>
+                    </div>
+                    <Campo label="Nº do anel" name="numeroAnel" />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-5 text-sm text-ink/75">
+                    <Checkbox label="Suspensório" name="suspensorio" />
+                    <Checkbox label="Lenço" name="lenco" />
+                    <Checkbox label="Flor" name="flor" />
+                  </div>
+                </fieldset>
+
+                <button type="submit" className={buttonClass}>
+                  Salvar medidas
+                </button>
+              </form>
+            </details>
           </Card>
 
           <Card className="p-5">
@@ -173,21 +281,34 @@ export default async function PedidoDetalhePage({ params }: { params: Promise<{ 
             </div>
           </Card>
 
-          <Card className="p-5 text-center">
-            <SectionTitle>Autopreenchimento</SectionTitle>
-            <div className="mx-auto mt-3 w-fit rounded-lg border border-line bg-white p-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrCodeDataUrl} alt="QR code de autopreenchimento" className="mx-auto" />
+          <Card className="p-5 text-sm">
+            <SectionTitle>Cliente</SectionTitle>
+            <div className="mt-3 space-y-1 text-ink/70">
+              <p>{pedido.cliente.email ?? "—"}</p>
+              <p>{pedido.cliente.endereco ?? "—"}</p>
+              <p>{pedido.cliente.cidade ?? "—"}</p>
             </div>
-            <p className="mt-3 break-all text-xs text-ink/45">{linkAutopreenchimento}</p>
-            <p className="mt-2 text-xs font-medium text-ink/60">
-              {pedido.autopreenchimentoPreenchidoEm
-                ? `Preenchido em ${formatarData(pedido.autopreenchimentoPreenchidoEm)}`
-                : "O cliente ainda não preencheu os dados dele."}
-            </p>
           </Card>
         </div>
       </div>
     </div>
+  );
+}
+
+function Campo({ label, name }: { label: string; name: string }) {
+  return (
+    <div>
+      <label className={labelClass}>{label}</label>
+      <input name={name} className={inputClass} />
+    </div>
+  );
+}
+
+function Checkbox({ label, name }: { label: string; name: string }) {
+  return (
+    <label className="flex items-center gap-2">
+      <input type="checkbox" name={name} className="h-4 w-4 rounded border-line text-gold focus:ring-gold" />
+      {label}
+    </label>
   );
 }

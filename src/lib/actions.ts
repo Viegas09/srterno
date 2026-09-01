@@ -76,6 +76,41 @@ const clienteSchema = z.object({
   comoConheceu: z.enum(["GOOGLE", "REDE_SOCIAL", "INDICACAO", "OUTROS"]).optional(),
 });
 
+const checkinSchema = z.object({
+  nome: z.string().min(2),
+  cpf: z.string().min(11),
+  telefone: z.string().optional(),
+  email: z.string().optional(),
+  comoConheceu: z.enum(["GOOGLE", "REDE_SOCIAL", "INDICACAO", "OUTROS"]).optional(),
+});
+
+/// Check-in público (QR fixo na entrada da loja). O cliente só informa os
+/// próprios dados de contato — nunca medidas. Cria (ou atualiza, se já é
+/// cliente) o registro e entra na fila de atendimento; a atendente completa
+/// o resto (tipo, valor, medidas) depois de chamar e medir a pessoa.
+export async function criarCheckin(formData: FormData) {
+  const dados = checkinSchema.parse({
+    nome: formData.get("nome"),
+    cpf: String(formData.get("cpf") || "").replace(/\D/g, ""),
+    telefone: formData.get("telefone") || undefined,
+    email: formData.get("email") || undefined,
+    comoConheceu: (formData.get("comoConheceu") as string) || undefined,
+  });
+
+  const clienteExistente = await prisma.cliente.findUnique({ where: { cpf: dados.cpf } });
+
+  const cliente = clienteExistente
+    ? await prisma.cliente.update({ where: { id: clienteExistente.id }, data: dados })
+    : await prisma.cliente.create({ data: dados });
+
+  await prisma.pedido.create({
+    data: { clienteId: cliente.id, status: "AGUARDANDO_AUTOPREENCHIMENTO" },
+  });
+
+  revalidatePath("/admin/recepcao");
+  redirect(`/recepcao?ok=1&nome=${encodeURIComponent(dados.nome)}`);
+}
+
 export async function criarPedidoComCliente(formData: FormData) {
   await requireSession();
 
@@ -141,6 +176,30 @@ export async function registrarPagamento(formData: FormData) {
   revalidatePath("/admin/financeiro");
 }
 
+export async function atualizarDadosPedido(pedidoId: string, formData: FormData) {
+  await requireSession();
+
+  const tipo = (formData.get("tipo") as string) || "ALUGUEL";
+  const descricao = (formData.get("descricao") as string) || null;
+  const valorTotal = Number(formData.get("valorTotal") || 0);
+  const dataRetiradaStr = formData.get("dataRetirada") as string;
+  const dataDevolucaoStr = formData.get("dataDevolucao") as string;
+
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: {
+      tipo: tipo as any,
+      descricao,
+      valorTotal,
+      dataRetirada: dataRetiradaStr ? new Date(dataRetiradaStr) : null,
+      dataDevolucao: dataDevolucaoStr ? new Date(dataDevolucaoStr) : null,
+    },
+  });
+
+  revalidatePath(`/admin/pedidos/${pedidoId}`);
+  revalidatePath("/admin/pedidos");
+}
+
 export async function atualizarStatusPedido(pedidoId: string, status: string) {
   await requireSession();
   await prisma.pedido.update({ where: { id: pedidoId }, data: { status: status as any } });
@@ -171,9 +230,11 @@ const pessoaSchema = z.object({
   numeroAnel: z.string().optional(),
 });
 
-/// Usado tanto pelo admin (adicionar pessoa manualmente) quanto pela página
-/// pública de autopreenchimento (cliente escaneia o QR e preenche os dados).
+/// Só a atendente lança medidas — o cliente nunca escreve nem edita essa
+/// parte (ela digita olhando a pessoa na sua frente).
 export async function adicionarPessoaAoPedido(pedidoId: string, formData: FormData) {
+  await requireSession();
+
   const dados = pessoaSchema.parse({
     nome: formData.get("nome"),
     cpf: formData.get("cpf") || undefined,

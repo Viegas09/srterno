@@ -6,11 +6,13 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
-  const [pedidosAtivos, aguardandoCliente, pagamentosMes, proximasRetiradas] = await Promise.all([
+  const [pedidosAtivos, naFila, pagamentosMes, proximasRetiradas] = await Promise.all([
     prisma.pedido.count({
       where: { status: { notIn: ["DEVOLVIDO", "CANCELADO"] } },
     }),
-    prisma.pedido.count({ where: { status: "AGUARDANDO_AUTOPREENCHIMENTO" } }),
+    prisma.pedido.count({
+      where: { status: "AGUARDANDO_AUTOPREENCHIMENTO", pessoas: { none: {} } },
+    }),
     prisma.pagamento.aggregate({
       _sum: { valor: true },
       where: {
@@ -37,7 +39,7 @@ export default async function AdminOverviewPage() {
 
   const cards = [
     { label: "Pedidos ativos", value: pedidosAtivos },
-    { label: "Aguardando cliente", value: aguardandoCliente },
+    { label: "Na fila de atendimento", value: naFila, href: "/admin/recepcao" },
     { label: "Recebido este mês", value: formatarMoeda(Number(pagamentosMes._sum.valor ?? 0)) },
     { label: "Total em pedidos ativos", value: formatarMoeda(Number(totalAReceber._sum.valorTotal ?? 0)) },
   ];
@@ -48,7 +50,7 @@ export default async function AdminOverviewPage() {
 
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         {cards.map((c) => (
-          <StatCard key={c.label} label={c.label} value={c.value} />
+          <StatCard key={c.label} label={c.label} value={c.value} href={c.href} />
         ))}
       </div>
 

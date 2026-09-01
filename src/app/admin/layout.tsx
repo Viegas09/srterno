@@ -4,6 +4,7 @@ import { NavLink } from "@/components/NavLink";
 
 const NAV = [
   { href: "/admin", label: "Visão geral" },
+  { href: "/admin/recepcao", label: "Fila de atendimento" },
   { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/clientes", label: "Clientes" },
   { href: "/admin/financeiro", label: "Financeiro" },

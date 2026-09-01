@@ -52,7 +52,7 @@ export const TIPO_LABEL: Record<string, string> = {
 
 export const STATUS_LABEL: Record<string, string> = {
   RASCUNHO: "Rascunho",
-  AGUARDANDO_AUTOPREENCHIMENTO: "Aguardando cliente",
+  AGUARDANDO_AUTOPREENCHIMENTO: "Aguardando atendimento",
   CONFIRMADO: "Confirmado",
   EM_AJUSTE: "Em ajuste",
   PRONTO_RETIRADA: "Pronto p/ retirada",

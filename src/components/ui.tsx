@@ -35,13 +35,23 @@ export function PageHeader({
   );
 }
 
-export function StatCard({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <Card className="px-5 py-4">
+export function StatCard({ label, value, href }: { label: string; value: ReactNode; href?: string }) {
+  const content = (
+    <>
       <p className="text-xs font-medium uppercase tracking-wide text-ink/45">{label}</p>
       <p className="mt-1.5 font-sans text-2xl font-semibold tabular-nums text-ink">{value}</p>
-    </Card>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link href={href}>
+        <Card className="px-5 py-4 transition hover:border-gold">{content}</Card>
+      </Link>
+    );
+  }
+
+  return <Card className="px-5 py-4">{content}</Card>;
 }
 
 export function ButtonLink({ href, children }: { href: string; children: ReactNode }) {

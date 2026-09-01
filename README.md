@@ -2,7 +2,7 @@
 
 Sistema interno de gestão para a **Sr. Terno** (aluguel de trajes masculinos para eventos —
 srterno.com.br), substituindo o controle em papel por um dashboard de pedidos/clientes/financeiro
-e um fluxo de autopreenchimento de dados pelo cliente via QR code.
+e um fluxo de check-in do cliente via QR code na entrada da loja.
 
 Este projeto é só o **sistema**. O site institucional da loja não faz parte deste repositório.
 
@@ -11,20 +11,22 @@ Este projeto é só o **sistema**. O site institucional da loja não faz parte d
 - [Next.js 16](https://nextjs.org/) (App Router) + TypeScript
 - [Prisma](https://www.prisma.io/) + PostgreSQL (compatível com [Supabase](https://supabase.com/))
 - Tailwind CSS
-- `qrcode` para gerar o QR de autopreenchimento
 - Login próprio (e-mail/senha, sessão via cookie assinado com `jose`) protegendo `/admin`
 
 ## Como funciona
 
-1. O vendedor cria um **pedido** no dashboard (`/admin/pedidos/novo`) com os dados básicos do
-   cliente responsável, tipo (aluguel/venda/sob medida), datas e valor.
-2. O sistema gera um **link/QR code único** para aquele pedido (visível na página do pedido).
-3. O cliente escaneia o QR no celular e preenche ele mesmo nome, CPF e medidas
-   (`/pedido/[token]`) — sem o vendedor precisar digitar nada. Pode preencher mais de uma pessoa
-   no mesmo pedido (ex.: padrinhos de casamento).
-4. O vendedor acompanha tudo pelo dashboard: pessoas/medidas preenchidas, pagamentos
-   (sinal/saldo/multas) e status do pedido (rascunho → aguardando cliente → confirmado → em
-   ajuste → pronto para retirada → retirado → devolvido).
+1. Na entrada da loja tem um **QR code fixo** (cartaz, sempre o mesmo link: `/recepcao`). O
+   cliente escaneia e preenche só os **dados pessoais** — nome, CPF, telefone, e-mail. Sem
+   medidas: essa parte é sempre digitada pela atendente, o cliente nunca edita.
+2. Isso já cria o cliente e um pedido em **"Aguardando atendimento"**, que aparece na tela
+   **Fila de atendimento** do dashboard (`/admin/recepcao`), ordenado por quem chegou primeiro.
+3. A senha física de atendimento (a que o cliente pega na porta) continua sendo controlada fora
+   do sistema — o sistema só ajuda a atendente a achar o nome certo na fila.
+4. Quando é a vez do cliente, a atendente abre o pedido dele na fila, completa o **tipo/valor/datas**
+   do pedido e **lança as medidas** olhando a pessoa na sua frente. A partir daí o pedido some da
+   fila e vira um pedido normal, acompanhado pelo dashboard como qualquer outro (pagamentos,
+   status, etc.) — inclusive dá pra abrir um pedido manualmente (`/admin/pedidos/novo`) pra casos
+   sem check-in, como um pedido por telefone.
 5. A tela de **Financeiro** mostra o recebido no mês, saldo a receber por pedido e breakdown por
    forma de pagamento.
 
@@ -33,8 +35,9 @@ Este projeto é só o **sistema**. O site institucional da loja não faz parte d
 Modelado a partir da ficha física de locação usada hoje pela loja:
 
 - `Cliente` — dados de quem contrata (nome, CPF, contato, como conheceu a loja)
-- `Pedido` — a locação/venda em si (datas de retirada/devolução, provas, valor, status, token do QR)
-- `PessoaPedido` — medidas de cada pessoa do pedido (paletó, colete, calça, manga, ajuste, etc.)
+- `Pedido` — a locação/venda em si (datas de retirada/devolução, provas, valor, status)
+- `PessoaPedido` — medidas de cada pessoa do pedido, digitadas pela atendente (paletó, colete,
+  calça, manga, ajuste, etc.)
 - `Peca` — item físico de estoque, identificado por código/etiqueta individual
 - `ItemPedido` — reserva de uma peça física para um pedido
 - `Pagamento` — sinal, saldo, multas, com forma de pagamento
